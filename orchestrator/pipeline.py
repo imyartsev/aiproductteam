@@ -1,0 +1,72 @@
+from __future__ import annotations
+
+import os
+from pathlib import Path
+
+from rich.console import Console
+from rich.panel import Panel
+
+from agents import POAgent, ArchitectAgent, AnalystAgent, DevAgent, QAAgent, DevOpsAgent
+from orchestrator.state import ProjectState
+
+console = Console(highlight=False, legacy_windows=False)
+
+STEPS = [
+    ("PO",        POAgent,        "task_spec"),
+    ("Architect", ArchitectAgent, "arch_decision"),
+    ("Analyst",   AnalystAgent,   "tech_spec"),
+    ("Dev",       DevAgent,       "code_artifact"),
+    ("QA",        QAAgent,        "test_report"),
+    ("DevOps",    DevOpsAgent,    "deploy_config"),
+]
+
+
+def run_pipeline(task: str, dry_run: bool = False) -> ProjectState:
+    state = ProjectState(raw_task=task)
+
+    console.print(Panel(f"[bold cyan]Задача:[/] {task}", title="AI Product Team"))
+
+    for name, AgentClass, artifact_field in STEPS:
+        console.print(f"\n[bold yellow]>> {name}[/] обрабатывает задачу...")
+
+        if dry_run:
+            setattr(
+                state,
+                artifact_field,
+                getattr(state, artifact_field).__class__(
+                    content=f"[dry-run] {name} output"
+                ),
+            )
+            console.print(f"[dim]  (dry-run, пропущено)[/]")
+            continue
+
+        agent = AgentClass()
+        state = agent.process(state)
+        artifact = getattr(state, artifact_field)
+        preview = artifact.content[:200].replace("\n", " ")
+        console.print(f"[green]  OK[/] {preview}{'...' if len(artifact.content) > 200 else ''}")
+
+    return state
+
+
+def save_results(state: ProjectState, output_dir: str | None = None) -> Path:
+    base = Path(output_dir or os.environ.get("PROJECTS_DIR", "./projects"))
+    # Используем первые 40 символов задачи как имя папки
+    slug = "".join(c if c.isalnum() or c in "-_" else "_" for c in state.raw_task[:40])
+    project_dir = base / slug
+    project_dir.mkdir(parents=True, exist_ok=True)
+
+    artifacts = {
+        "01_task_spec.md": state.task_spec.content,
+        "02_arch_decision.md": state.arch_decision.content,
+        "03_tech_spec.md": state.tech_spec.content,
+        "04_code.md": state.code_artifact.content,
+        "05_test_report.md": state.test_report.content,
+        "06_deploy_config.md": state.deploy_config.content,
+    }
+
+    for filename, content in artifacts.items():
+        (project_dir / filename).write_text(content, encoding="utf-8")
+
+    console.print(f"\n[bold green]OK Результаты сохранены:[/] {project_dir}")
+    return project_dir

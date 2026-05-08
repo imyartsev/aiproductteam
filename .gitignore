@@ -2,6 +2,9 @@
 __pycache__/
 *.pyc
 *.egg-info/
+*.log
+venv/
+.venv/
 projects/*
 !projects/.gitkeep
 .pytest_cache/

@@ -6,7 +6,7 @@ from .base import BaseAgent
 
 class ArchitectAgent(BaseAgent):
     role = "architect"
-    use_heavy_model = True
+    use_reasoner = True
 
     def process(self, state: ProjectState) -> ProjectState:
         prompt = (

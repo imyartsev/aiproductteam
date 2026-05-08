@@ -6,7 +6,7 @@ from .base import BaseAgent
 
 class POAgent(BaseAgent):
     role = "po"
-    use_heavy_model = True
+    use_reasoner = True
 
     def process(self, state: ProjectState) -> ProjectState:
         prompt = f"Бизнес-задача:\n\n{state.raw_task}"

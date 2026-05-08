@@ -7,6 +7,7 @@ from rich.console import Console
 from rich.panel import Panel
 
 from agents import POAgent, ArchitectAgent, AnalystAgent, DevAgent, QAAgent, DevOpsAgent
+from orchestrator.extractor import extract_files
 from orchestrator.state import ProjectState
 
 console = Console(highlight=False, legacy_windows=False)
@@ -68,5 +69,13 @@ def save_results(state: ProjectState, output_dir: str | None = None) -> Path:
     for filename, content in artifacts.items():
         (project_dir / filename).write_text(content, encoding="utf-8")
 
+    # Извлекаем реальные файлы из вывода Dev, QA и DevOps
+    extract_files(state.code_artifact.content, project_dir)
+    extract_files(state.test_report.content, project_dir)
+    extract_files(state.deploy_config.content, project_dir)
+
+    real_files = [f for f in project_dir.rglob("*") if f.is_file() and not f.name.endswith(".md")]
     console.print(f"\n[bold green]OK Результаты сохранены:[/] {project_dir}")
+    if real_files:
+        console.print(f"[dim]  Создано файлов проекта: {len(real_files)}[/]")
     return project_dir

@@ -40,3 +40,23 @@ def test_save_results_creates_files(tmp_path):
     names = {f.name for f in files}
     assert "01_task_spec.md" in names
     assert "06_deploy_config.md" in names
+
+
+def test_save_results_extracts_real_files(tmp_path):
+    """Если code_artifact содержит # path: маркеры, файлы создаются на диске."""
+    from orchestrator.state import ProjectState, CodeArtifact
+
+    state = ProjectState(raw_task="Test")
+    state.code_artifact = CodeArtifact(content=(
+        "```python\n"
+        "# path: src/app.py\n"
+        "print('hello')\n"
+        "```\n"
+    ))
+
+    project_dir = save_results(state, output_dir=str(tmp_path))
+
+    # markdown-файл всегда создаётся
+    assert (project_dir / "04_code.md").exists()
+    # реальный файл тоже создан
+    assert (project_dir / "src" / "app.py").exists()

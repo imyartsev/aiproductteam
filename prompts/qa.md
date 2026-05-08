@@ -16,6 +16,37 @@
 ...
 ```
 
+#### Фреймворк тестирования (ОБЯЗАТЕЛЬНО)
+
+Используй ТОЛЬКО `pytest` + `fastapi.testclient.TestClient`.
+
+НЕЛЬЗЯ:
+- `httpx.AsyncClient` с `base_url="http://localhost:..."` (требует живой сервер)
+- `requests.get("http://localhost:8000/...")` (требует живой сервер)
+- Любые обращения к `localhost` или `127.0.0.1` в тестах
+
+ПРАВИЛЬНЫЙ импорт и паттерн:
+
+**КРИТИЧНО: код Dev-агента всегда в `app/` — импортируй именно оттуда:**
+
+```python
+# path: tests/test_api.py
+import pytest
+from fastapi.testclient import TestClient
+from app.main import app  # ВСЕГДА from app.main, НИКОГДА from src.main или from main
+
+client = TestClient(app)
+
+
+def test_health():
+    response = client.get("/health")
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok"}
+```
+
+TestClient создаёт встроенный тестовый транспорт — не нужен запущенный сервер.
+Работает внутри Docker-контейнера без дополнительных настроек.
+
 Покрой:
 - Happy path для каждого требования
 - Edge cases и граничные значения
@@ -36,3 +67,4 @@
 - Тесты должны быть независимыми и воспроизводимыми
 - Покрывай спецификации, а не детали реализации
 - Будь конкретен в баг-репортах — без размытых формулировок
+- Используй pytest + TestClient — не обращайся к localhost в тестах, это не работает внутри Docker

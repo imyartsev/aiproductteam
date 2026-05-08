@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import shutil
 from pathlib import Path
 
 from rich.console import Console
@@ -55,7 +56,9 @@ def save_results(state: ProjectState, output_dir: str | None = None) -> Path:
     # Используем первые 40 символов задачи как имя папки
     slug = "".join(c if c.isalnum() or c in "-_" else "_" for c in state.raw_task[:40])
     project_dir = base / slug
-    project_dir.mkdir(parents=True, exist_ok=True)
+    if project_dir.exists():
+        shutil.rmtree(project_dir)
+    project_dir.mkdir(parents=True)
 
     artifacts = {
         "01_task_spec.md": state.task_spec.content,
@@ -73,6 +76,17 @@ def save_results(state: ProjectState, output_dir: str | None = None) -> Path:
     extract_files(state.code_artifact.content, project_dir)
     extract_files(state.test_report.content, project_dir)
     extract_files(state.deploy_config.content, project_dir)
+
+    # Гарантируем наличие тестовых зависимостей в requirements.txt
+    req_file = project_dir / "requirements.txt"
+    if req_file.exists():
+        req_content = req_file.read_text(encoding="utf-8")
+        additions = []
+        for pkg in ("pytest", "httpx"):
+            if pkg not in req_content:
+                additions.append(pkg)
+        if additions:
+            req_file.write_text(req_content.rstrip() + "\n" + "\n".join(additions) + "\n", encoding="utf-8")
 
     real_files = [f for f in project_dir.rglob("*") if f.is_file() and not f.name.endswith(".md")]
     console.print(f"\n[bold green]OK Результаты сохранены:[/] {project_dir}")

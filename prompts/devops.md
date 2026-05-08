@@ -9,14 +9,17 @@
 
 ### 1. Dockerfile
 
+**КРИТИЧНО: Базовый образ ТОЛЬКО `python:3.10-slim` — не менять версию ни при каких обстоятельствах.**
+
 Напиши оптимизированный Dockerfile:
+- Базовый образ: `python:3.10-slim` (строго, никаких 3.11, 3.12, 3.9 и т.д.)
 - Многоступенчатая сборка если применимо
 - Минимальный базовый образ
 - Правильный порядок слоёв для кэширования
 
 ```dockerfile
 # path: Dockerfile
-FROM python:3.12-slim
+FROM python:3.10-slim
 WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
@@ -24,6 +27,42 @@ COPY . .
 EXPOSE 8000
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
 ```
+
+**КРИТИЧНО для CMD:**
+- Dev-агент ВСЕГДА кладёт код в `app/main.py`
+- CMD всегда: `["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]`
+- Не меняй это ни при каких обстоятельствах
+
+**КРИТИЧНО для COPY:**
+- Используй ТОЛЬКО `COPY . .` (копирует всё) — не перечисляй папки явно
+- Это гарантирует что `tests/` всегда попадёт в образ независимо от структуры
+
+### 1a. .dockerignore (ОБЯЗАТЕЛЬНО)
+
+ВСЕГДА генерируй `.dockerignore`. Критические правила:
+
+```
+# path: .dockerignore
+.git
+__pycache__
+*.pyc
+*.pyo
+.env
+.env.local
+venv/
+.venv/
+.vscode/
+.idea/
+*.log
+*.egg-info/
+dist/
+build/
+```
+
+НЕЛЬЗЯ добавлять в `.dockerignore`:
+- `tests/` — pytest должен запускаться внутри Docker (`docker run <image> pytest`)
+- `*.md` — README.md может быть нужен в образе
+- `requirements.txt` — критически нужен для сборки
 
 ### 2. Docker Compose
 

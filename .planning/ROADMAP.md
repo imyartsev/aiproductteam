@@ -25,7 +25,9 @@
   1. В `agents/po.py` атрибут называется `use_reasoner = True` (не `use_heavy_model`)
   2. В `agents/architect.py` атрибут называется `use_reasoner = True` (не `use_heavy_model`)
   3. При запуске с `HEAVY_MODEL=true` оба агента используют модель `deepseek-reasoner`, а без флага — `deepseek-chat`
-**Plans**: TBD
+**Plans**: 1 план
+Plans:
+- [ ] 01-01-PLAN.md — Переименование атрибута и починка тестов
 
 ### Phase 2: Извлечение файлов
 **Goal**: Pipeline автоматически создаёт реальные файлы проекта из markdown-вывода агентов Dev, QA и DevOps
@@ -65,6 +67,6 @@
 
 | Этап | Планов выполнено | Статус | Завершён |
 |------|-----------------|--------|----------|
-| 1. Исправление бага | 0/? | Not started | - |
+| 1. Исправление бага | 0/1 | Not started | - |
 | 2. Извлечение файлов | 0/? | Not started | - |
 | 3. Демо-прогон | 0/? | Not started | - |

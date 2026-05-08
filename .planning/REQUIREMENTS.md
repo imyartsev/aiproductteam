@@ -7,7 +7,7 @@
 
 ### Исправление багов
 
-- [ ] **FIX-01**: Атрибут `use_heavy_model` в `agents/po.py` и `agents/architect.py` переименован в `use_reasoner` — флаг `HEAVY_MODEL=true` активирует reasoner-модель для PO и Architect
+- [x] **FIX-01**: Атрибут `use_heavy_model` в `agents/po.py` и `agents/architect.py` переименован в `use_reasoner` — флаг `HEAVY_MODEL=true` активирует reasoner-модель для PO и Architect
 
 ### Извлечение кода
 
@@ -54,7 +54,7 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FIX-01 | Phase 1 | Pending |
+| FIX-01 | Phase 1 | Done (2026-05-08) |
 | CODE-01 | Phase 2 | Pending |
 | CODE-02 | Phase 2 | Pending |
 | CODE-03 | Phase 2 | Pending |
@@ -72,4 +72,4 @@
 
 ---
 *Requirements defined: 2026-05-08*
-*Last updated: 2026-05-08 — дорожная карта создана, трассировка подтверждена*
+*Last updated: 2026-05-08 — FIX-01 закрыт планом 01-01*

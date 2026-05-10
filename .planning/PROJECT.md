@@ -2,7 +2,7 @@
 
 ## What This Is
 
-Автономная команда ИИ-агентов, которая принимает описание задачи и прогоняет её через полный цикл разработки: PO → Architect → Analyst → Dev → QA → DevOps. На выходе — реальные файлы проекта, которые можно запустить.
+Автономная команда ИИ-агентов, которая принимает описание задачи и прогоняет её через полный цикл разработки: PO → Architect → Analyst → Dev → QA → DevOps. На выходе — реальные файлы проекта (Python-код, тесты, Dockerfile, CI-конфиги), которые можно запустить без ручных правок.
 
 ## Core Value
 
@@ -12,21 +12,20 @@
 
 ### Validated
 
-- ✓ Последовательный pipeline из 6 агентов (PO → Architect → Analyst → Dev → QA → DevOps) — существующий код
-- ✓ Интеграция с DeepSeek API через OpenAI SDK — существующий код
-- ✓ Shared state (ProjectState) передаётся через весь pipeline — существующий код
-- ✓ CLI-интерфейс: `python main.py "задача"` — существующий код
-- ✓ Dry-run режим для тестирования без API-вызовов — существующий код
-- ✓ Markdown-артефакты сохраняются в `projects/<slug>/` — существующий код
+- ✓ Последовательный pipeline из 6 агентов (PO → Architect → Analyst → Dev → QA → DevOps) — v1.0
+- ✓ Интеграция с DeepSeek API через OpenAI SDK — v1.0
+- ✓ Shared state (ProjectState) передаётся через весь pipeline — v1.0
+- ✓ CLI-интерфейс: `python main.py "задача"` — v1.0
+- ✓ Dry-run режим для тестирования без API-вызовов — v1.0
+- ✓ Markdown-артефакты сохраняются в `projects/<slug>/` — v1.0
+- ✓ Исправлен баг: `use_heavy_model` → `use_reasoner` в PO и Architect — v1.0
+- ✓ Парсер `# path:` маркеров — Dev/QA/DevOps создают реальные файлы на диске — v1.0
+- ✓ Pipeline успешно выполняется с задачей "Создай FastAPI сервис для управления задачами" — v1.0
+- ✓ Сгенерированный FastAPI сервис запускается и тесты проходят (38/38, Docker) — v1.0
 
 ### Active
 
-- [ ] Dev-агент извлекает код из markdown (блоки `# path: ...`) и создаёт реальные файлы на диске
-- [ ] QA-агент создаёт реальные тестовые файлы (не только отчёт в markdown)
-- [ ] DevOps-агент создаёт Dockerfile и CI-конфиги как реальные файлы
-- [ ] Исправлен баг: атрибут `use_heavy_model` в PO и Architect не совпадает с `use_reasoner` в BaseAgent
-- [ ] Pipeline успешно выполняется с задачей "Создай FastAPI сервис для управления задачами"
-- [ ] Сгенерированный FastAPI сервис запускается (`uvicorn`) и тесты проходят
+*(нет активных требований — v1.0 milestone закрыт)*
 
 ### Out of Scope
 
@@ -34,48 +33,43 @@
 - Интеграция `tools/` (file_ops, code_exec, git_ops) — заготовки, не нужны для demo
 - Retry-логика и расширенная обработка ошибок API — за рамками demo
 - Поддержка других языков кроме Python — нет такого требования
+- Path traversal validation для `# path:` маркеров — принято как REL-04 в backlog
 
 ## Context
 
-Проект уже реализован и запускаем. DeepSeek API-ключ настроен в `.env`.
+**Shipped v1.0:** 2026-05-08. Pipeline полностью работает — от текстовой задачи до запускаемого FastAPI проекта.
 
-Ключевая проблема: Dev-агент пишет код в блоках с маркером `# path: src/main.py` внутри markdown-файла `04_code.md`. Код там есть, но как реальные файлы не раскладывается — нужен парсер, который извлечёт блоки и создаст настоящие `.py`-файлы.
+Стек: Python 3.13, DeepSeek API (OpenAI-совместимый через `base_url=https://api.deepseek.com`), Pydantic.
 
-Аналогично для QA (тесты) и DevOps (Dockerfile, CI yml).
+Запуск: `PYTHONIOENCODING=utf-8 python main.py "задача"`.
+Верификация: `python verify.py projects/<slug>` (требует запущенный Docker).
 
-**Известные баги из карты кодовой базы:**
-- `agents/po.py:9` и `agents/architect.py:9` устанавливают `use_heavy_model = True`, но `agents/base.py:33` проверяет `self.use_reasoner` — флаг `HEAVY_MODEL=true` никогда не активирует reasoner-модель
+Итог верификации v1.0: 38 тестов PASS, FastAPI сервис поднимается в Docker, `/health` → 200.
+
+**Примечание (2026-05-10):** После завершения v1.0 концепция проекта была переосмыслена. GSD-фреймворк решает задачу автоматизации разработки более полно и детально. v2 не планируется.
 
 ## Constraints
 
 - **Стек:** Python, DeepSeek API (OpenAI-совместимый), Pydantic — менять не нужно
 - **Вывод:** `projects/<slug>/` — реальная структура проекта, а не только markdown
 - **Запускаемость:** Сгенерированный FastAPI ToDo сервис должен стартовать без ручных правок
+- **Docker образ:** `python:3.10-slim` — единственный проверенный базовый образ
 
 ## Key Decisions
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| DeepSeek вместо Claude для агентов | Дешевле и быстрее для серийных запросов pipeline | — Pending |
-| Markdown с `# path:` маркерами как формат вывода Dev | Позволяет агенту писать свободно, потом парсим | — Pending |
-| Один `ProjectState` на весь pipeline | Простота — каждый агент видит всё что было до него | — Pending |
+| DeepSeek вместо Claude для агентов | Дешевле и быстрее для серийных запросов pipeline | ✓ Работает, API-совместимость полная |
+| Markdown с `# path:` маркерами как формат вывода Dev | Позволяет агенту писать свободно, потом парсим | ✓ Работает надёжно через regex + re.DOTALL |
+| Один `ProjectState` на весь pipeline | Простота — каждый агент видит всё что было до него | ✓ Достаточно для sequential pipeline |
+| `use_reasoner` вместо `use_heavy_model` | Совпадение с полем в BaseAgent | ✓ Баг устранён, HEAVY_MODEL=true работает |
+| `python:3.10-slim` как базовый Docker образ | `python:3.12-slim` не был доступен в локальном кэше | ✓ Стабильно |
+| `python -m pytest` вместо `pytest` | Гарантия PATH в Docker-окружении | ✓ 38 тестов PASS |
+| `shutil.rmtree` перед записью в `pipeline.py` | Предотвращение накопления файлов между прогонами | ✓ Чистые прогоны |
 
 ## Evolution
 
-This document evolves at phase transitions and milestone boundaries.
-
-**After each phase transition** (via `/gsd-transition`):
-1. Requirements invalidated? → Move to Out of Scope with reason
-2. Requirements validated? → Move to Validated with phase reference
-3. New requirements emerged? → Add to Active
-4. Decisions to log? → Add to Key Decisions
-5. "What This Is" still accurate? → Update if drifted
-
-**After each milestone** (via `/gsd-complete-milestone`):
-1. Full review of all sections
-2. Core Value check — still the right priority?
-3. Audit Out of Scope — reasons still valid?
-4. Update Context with current state
+**After v1.0 (2026-05-10):** Проект закрыт как концепция. Код и артефакты сохранены как исторический пример. GSD-фреймворк признан более подходящим инструментом для задач автоматизации разработки.
 
 ---
-*Last updated: 2026-05-08 после инициализации*
+*Last updated: 2026-05-10 после завершения v1.0 milestone*
